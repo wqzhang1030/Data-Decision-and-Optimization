@@ -1,4 +1,3 @@
-# Agent Instructions for This Repository
 
 ## Scope and Safety
 - Read this file first and follow it strictly.
