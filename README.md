@@ -1,6 +1,5 @@
-太好了 👍 我给你做一个**完整、正式、学术英文翻译版本**（保持结构、不过度删减、表达自然，不是直译中式英语）。
 
----
+
 
 # A Two-Stage Patch–Patient Learning Framework for *Helicobacter pylori*–Related Diagnosis in Histopathology
 
