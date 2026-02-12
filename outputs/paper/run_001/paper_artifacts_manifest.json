@@ -1,0 +1,20 @@
+{
+  "patch_metrics": "/hhome/ricse03/Deep_Learning_Group 3/outputs/patch_matrix/resnet18_s42/run_001/metrics.json",
+  "patient_metrics": "/hhome/ricse03/Deep_Learning_Group 3/outputs/patient_full/resnet18_s42/run_001/metrics.json",
+  "patient_report_xlsx": "/hhome/ricse03/Deep_Learning_Group 3/outputs/patient_full/resnet18_s42/run_001/patient_prediction_report.xlsx",
+  "heatmap_index": "/hhome/ricse03/Deep_Learning_Group 3/outputs/patch_heatmaps/run_001/heatmaps_index.csv",
+  "artifacts": {
+    "paper_main_results_csv": "outputs/paper/run_001/paper_main_results.csv",
+    "paper_patient_per_class_csv": "outputs/paper/run_001/paper_patient_per_class.csv",
+    "paper_error_cases_top_csv": "outputs/paper/run_001/paper_error_cases_top.csv",
+    "paper_figure_inventory_csv": "outputs/paper/run_001/paper_figure_inventory.csv",
+    "paper_tables_xlsx": "outputs/paper/run_001/paper_tables.xlsx",
+    "paper_summary_md": "outputs/paper/run_001/paper_summary.md"
+  },
+  "counts": {
+    "main_rows": 3,
+    "per_class_rows": 3,
+    "error_rows": 26,
+    "figure_rows": 10
+  }
+}

@@ -1,0 +1,25 @@
+seed: 52
+
+paths:
+  patch_train_csv: manifests/patch_train.csv
+  patch_val_csv: manifests/patch_val.csv
+  patch_test_csv: manifests/patch_test.csv
+  output_root: outputs/patch
+
+model:
+  backbone: resnet18
+  pretrained: false
+  dropout: 0.3
+
+train:
+  epochs: 4
+  batch_size: 64
+  num_workers: 0
+  lr: 0.0002
+  weight_decay: 0.0002
+  image_size: 224
+  use_pos_weight: false
+  train_flip: true
+
+metrics:
+  threshold: 0.5

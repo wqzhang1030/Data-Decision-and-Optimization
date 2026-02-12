@@ -1,0 +1,26 @@
+seed: 52
+paths:
+  patch_train_csv: manifests/patch_train.csv
+  patch_val_csv: manifests/patch_val.csv
+  patch_test_csv: manifests/patch_test.csv
+  output_root: outputs/patch_matrix/resnet50_s52
+model:
+  backbone: resnet50
+  pretrained: false
+  dropout: 0.2
+train:
+  epochs: 16
+  batch_size: 128
+  num_workers: 8
+  pin_memory: true
+  lr: 0.00025
+  lr_min: 1.0e-06
+  scheduler: cosine
+  weight_decay: 0.0002
+  image_size: 224
+  use_pos_weight: false
+  use_weighted_sampler: true
+  loss: bce
+  train_flip: true
+metrics:
+  threshold: 0.5
