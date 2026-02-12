@@ -1,0 +1,13 @@
+{
+  "checkpoint": "outputs/patch_matrix/resnet18_s42/run_001/best.ckpt",
+  "split_csv": "manifests/patch_test.csv",
+  "device": "cuda",
+  "backbone": "resnet18",
+  "image_size": 224,
+  "n_total_rows_in_split": 695,
+  "n_heatmaps": 50,
+  "n_true_pos_sampled": 25,
+  "n_true_neg_sampled": 25,
+  "output_dir": "outputs/patch_heatmaps/run_001",
+  "index_csv": "outputs/patch_heatmaps/run_001/heatmaps_index.csv"
+}

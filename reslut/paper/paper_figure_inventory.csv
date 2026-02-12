@@ -1,0 +1,11 @@
+figure_id,category,artifact_path,caption
+patch_confusion_matrix,Patch,/hhome/ricse03/Deep_Learning_Group 3/outputs/patch_matrix/resnet18_s42/run_001/confusion_matrix.png,Patch-level confusion matrix
+patch_roc_curve,Patch,/hhome/ricse03/Deep_Learning_Group 3/outputs/patch_matrix/resnet18_s42/run_001/roc_curve.png,Patch-level ROC curve
+patch_pr_curve,Patch,/hhome/ricse03/Deep_Learning_Group 3/outputs/patch_matrix/resnet18_s42/run_001/pr_curve.png,Patch-level PR curve
+patient_confusion_matrix,Patient,/hhome/ricse03/Deep_Learning_Group 3/outputs/patient_full/resnet18_s42/run_001/confusion_matrix.png,Patient-level confusion matrix
+heatmap_pos_1,Heatmap,outputs/patch_heatmaps/run_001/presence_pos/0025_B22-163_00387.png,Patch Grad-CAM positive example #1
+heatmap_pos_2,Heatmap,outputs/patch_heatmaps/run_001/presence_pos/0026_B22-163_00387_Aug3.png,Patch Grad-CAM positive example #2
+heatmap_pos_3,Heatmap,outputs/patch_heatmaps/run_001/presence_pos/0027_B22-163_00387_Aug6.png,Patch Grad-CAM positive example #3
+heatmap_neg_1,Heatmap,outputs/patch_heatmaps/run_001/presence_neg/0000_B22-174_00240.png,Patch Grad-CAM negative example #1
+heatmap_neg_2,Heatmap,outputs/patch_heatmaps/run_001/presence_neg/0001_B22-174_00255.png,Patch Grad-CAM negative example #2
+heatmap_neg_3,Heatmap,outputs/patch_heatmaps/run_001/presence_neg/0002_B22-241_01270.png,Patch Grad-CAM negative example #3
