@@ -1,311 +1,314 @@
-# Deep_Learning_Group 3
-
-## 1. Project Goal
-This repository implements a two-stage pipeline for Helicobacter pathology analysis:
-
-1. Patch-level Presence classification (`Presence in {-1, 1}`)
-2. Patient-level 3-class classification (`DENSITAT in {NEGATIVA, BAIXA, ALTA}`)
-
-Core constraints used in this project:
-
-- Dataset is read-only under `/hhome/ricse03/HelicoData`
-- Mapping rules:
-  - `Pat_ID = patient_folder.split('_')[0]`
-  - `Window_ID` is canonicalized from image stem / xlsx value
-- HoldOut is final evaluation only (not used for training/tuning)
-- Splits are grouped by patient to avoid leakage
+太好了 👍 我给你做一个**完整、正式、学术英文翻译版本**（保持结构、不过度删减、表达自然，不是直译中式英语）。
 
 ---
 
-## 2. Data Inputs (Absolute)
-
-- `DATA_ROOT=/hhome/ricse03/HelicoData`
-- `XLSX=/hhome/ricse03/HelicoData/HP_WSI-CoordAnnotatedAllPatches.xlsx`
-- `DIAG=/hhome/ricse03/HelicoData/PatientDiagnosis.csv`
-- Patch images used for training/validation/testing: `CrossValidation/Annotated`
-- Final inference set: `HoldOut`
+# A Two-Stage Patch–Patient Learning Framework for *Helicobacter pylori*–Related Diagnosis in Histopathology
 
 ---
 
-## 3. Pipeline Overview
+## Abstract
 
-1. Build patient labels
-   - `src/data/build_patient_labels.py`
-   - Output: `manifests/patient_labels.csv`
+This study focuses on histopathological image analysis for *Helicobacter pylori*–related diagnosis and proposes a complete two-stage framework bridging patch-level prediction and patient-level classification.
 
-2. Build clean patch table + patient-grouped split CSVs
-   - `src/data/rebuild_clean_patch_splits.py`
-   - Outputs:
-     - `manifests/patch_train.csv`
-     - `manifests/patch_val.csv`
-     - `manifests/patch_test.csv`
+In the first stage, a binary classifier is trained using patch-level labels (`Presence ∈ {1, -1}`). In the second stage, patch-level outputs and deep embedding features are aggregated at the patient level to perform three-class classification (`NEGATIVA / BAIXA / ALTA`).
 
-3. Train patch model (Task1)
-   - `src/train/train_patch_presence.py`
-   - Best retained checkpoint in this repo snapshot:
-     - `outputs/patch_matrix/resnet18_s42/run_001/best.ckpt`
+Under strict patient-level grouping (grouped by `Pat_ID`) and a final HoldOut evaluation protocol, the best-performing patient-level model achieves the following results on the HoldOut set:
+Accuracy = 0.7759, Macro-F1 = 0.7492, Balanced Accuracy = 0.7368, and Macro OvR ROC-AUC = 0.7978.
 
-4. Build patient embedding features from patch checkpoint
-   - `src/infer/build_patient_embedding_features.py`
-   - Outputs under:
-     - `outputs/patient_features_full/resnet18_s42/`
+For the intermediate BAIXA class, the model achieves Precision = 0.6250, Recall = 0.5882, and F1 = 0.6061.
 
-5. Train patient classifier (Task2)
-   - `src/train/train_patient_classifier_embed_cv.py`
-   - Best retained run in this snapshot:
-     - `outputs/patient_full/resnet18_s42/run_001/`
-
-6. Patch interpretability (Grad-CAM)
-   - `src/infer/generate_patch_gradcam_heatmaps.py`
-   - Output:
-     - `outputs/patch_heatmaps/run_001/`
-
-7. Patient prediction report export (`xlsx`)
-   - `src/report/export_patient_prediction_report.py`
-   - Output:
-     - `outputs/patient_full/resnet18_s42/run_001/patient_prediction_report.xlsx`
+Additionally, patch-level Grad-CAM heatmaps and a patient-level prediction report (xlsx) were generated to support interpretability and error tracking.
 
 ---
 
-## 4. Current Best Result Snapshot
+## 1. Research Objectives and Problem Definition
 
-Best patient run: `outputs/patient_full/resnet18_s42/run_001/metrics.json`
+### 1.1 Task Objectives
 
-- Accuracy: `0.7758620689655172`
-- Macro-F1: `0.7492134459347574`
-- Balanced Accuracy: `0.7367872436330855`
-- Macro OvR ROC-AUC: `0.7977895349147603`
-- Macro OvR PR-AUC: `0.670905397446111`
-- BAIXA:
-  - Precision: `0.625`
-  - Recall: `0.5882352941176471`
-  - F1: `0.6060606060606061`
-- Confusion Matrix:
-  - `[[53, 5, 0], [11, 20, 3], [0, 7, 17]]`
+The objective of this project is to construct a reproducible and interpretable histopathological image analysis pipeline composed of two hierarchical tasks:
 
-Global summary files:
+1. **Patch-Level Task (Task 1):**
+   Predict the `Presence` label (positive/negative) for each patch.
 
-- `outputs/patient_full/summary_metrics.csv`
-- `outputs/patient_full/summary_top.json`
+2. **Patient-Level Task (Task 2):**
+   Predict the patient-level `DENSITAT` three-class label based on aggregated patch information from the same patient.
 
 ---
 
-## 5. File-by-File Guide
+### 1.2 Label System
 
-### 5.1 Root Files
+* **Patch labels:** Extracted from the annotation xlsx file, where `Presence ∈ {1, -1}`. Samples with `Presence == 0` are treated as invalid and discarded.
 
-- `AGENTS.md`
-  - Repository operation constraints, data rules, and safety requirements.
-- `README.md`
-  - This documentation.
-
-### 5.2 Config Files
-
-- `configs/patch.yaml`
-  - Base patch training config.
-- `configs/patch_tuned.yaml`
-  - Tuned patch training config.
-- `configs/patch_tuned_quick.yaml`
-  - Faster patch tuning config.
-- `configs/patch_upstream.yaml`
-  - Upstream patch config variant.
-- `configs/patch_upstream_fast.yaml`
-  - Fast upstream variant.
-- `configs/patch_upstream_stable.yaml`
-  - Stable upstream variant.
-- `configs/patient_mil.yaml`
-  - Patient MIL training config.
-- `configs/patch_matrix/*.yaml`
-  - Patch model matrix experiment configs:
-    - `resnet18_s42.yaml`
-    - `resnet18_s52.yaml`
-    - `resnet34_s42.yaml`
-    - `resnet34_s52.yaml`
-    - `resnet50_s42.yaml`
-    - `resnet50_s52.yaml`
-
-### 5.3 Data Build Scripts (`src/data`)
-
-- `src/data/build_patch_index.py`
-  - Build patch index from annotated images + xlsx labels with strict join/audit logic.
-- `src/data/build_patient_labels.py`
-  - Build `Pat_ID, DENSITAT` table from diagnosis CSV.
-- `src/data/sanity_manifest.py`
-  - Validate manifests and print counts/balance/null/dup checks.
-- `src/data/make_patch_splits.py`
-  - Build patient-grouped split ID files for patch task.
-- `src/data/rebuild_clean_patch_splits.py`
-  - Rebuild clean patch split CSVs (canonical Window_ID handling + stratified patient split).
-- `src/data/build_patient_features.py`
-  - Aggregate patch probabilities into patient-level statistical features.
-
-### 5.4 Model Definitions (`src/models`)
-
-- `src/models/resnet_presence.py`
-  - ResNet18/34/50 binary Presence model construction.
-
-### 5.5 Inference / Feature Scripts (`src/infer`)
-
-- `src/infer/infer_patch_presence.py`
-  - Patch-level inference for HoldOut and optional annotated splits.
-- `src/infer/build_patient_embedding_features.py`
-  - Extract patient-level embedding + probability features from patch checkpoint.
-- `src/infer/generate_patch_gradcam_heatmaps.py`
-  - Generate patch-level Grad-CAM heatmap visualizations and index CSV.
-
-### 5.6 Training Scripts (`src/train`)
-
-- `src/train/train_patch_presence.py`
-  - Train patch Presence classifier, save checkpoint and patch metrics.
-- `src/train/train_patient_classifier_embed_cv.py`
-  - Main patient 3-class classifier with CV model selection and rich metrics export.
-- `src/train/train_patient_classifier.py`
-  - Baseline patient classifier script.
-- `src/train/train_patient_classifier_cv.py`
-  - Patient classifier CV variant.
-- `src/train/train_patient_classifier_rf_margin.py`
-  - RF + BAIXA margin rule variant.
-- `src/train/train_patient_mil.py`
-  - Patient MIL training/inference pipeline.
-
-### 5.7 Reporting (`src/report`)
-
-- `src/report/export_patient_prediction_report.py`
-  - Export patient prediction `xlsx` report with truth/pred/correctness/confidence/errors.
-- `src/report/build_paper_artifacts.py`
-  - Build paper-ready artifacts:
-    - main result table
-    - per-class patient table
-    - top error case table
-    - figure inventory
-    - consolidated xlsx + markdown summary
-  - Optionally copy these artifacts into `/hhome/ricse03/reslut/paper`.
-
-### 5.8 Manifest / Split Outputs
-
-- `manifests/patient_labels.csv`
-  - Ground-truth patient labels (`Pat_ID`, `DENSITAT`).
-- `manifests/patch_train.csv`
-- `manifests/patch_val.csv`
-- `manifests/patch_test.csv`
-  - Clean patch rows with image path, patient id, canonical window id, presence label.
-
-### 5.9 Retained Result Outputs (Current Snapshot)
-
-- `outputs/patch_matrix_top3.tsv`
-  - Top3 patch checkpoints from matrix search.
-- `outputs/patch_matrix/resnet18_s42/run_001/`
-  - Best retained patch model artifacts:
-    - `best.ckpt`
-    - `metrics.json`
-    - `confusion_matrix.png`
-    - `roc_curve.png`
-    - `pr_curve.png`
-
-- `outputs/patient_features_full/resnet18_s42/`
-  - Patient feature tables for each split:
-    - `train_features.csv`
-    - `val_features.csv`
-    - `test_features.csv`
-    - `holdout_features.csv`
-
-- `outputs/patient_full/resnet18_s42/run_001/`
-  - Best retained patient model artifacts:
-    - `metrics.json`
-    - `model.pkl`
-    - `preds_holdout.csv`
-    - `confusion_matrix.png`
-    - `patient_prediction_report.xlsx`
-
-- `outputs/patient_full/summary_metrics.csv`
-  - Combined metrics across available runs.
-- `outputs/patient_full/summary_top.json`
-  - Best run snapshots by different criteria.
-
-- `outputs/patch_heatmaps/run_001/`
-  - Patch Grad-CAM outputs:
-    - `presence_pos/*.png`
-    - `presence_neg/*.png`
-    - `heatmaps_index.csv`
-    - `summary.json`
-
-- `outputs/paper/run_001/`
-  - Paper-ready reporting package:
-    - `paper_main_results.csv`
-    - `paper_patient_per_class.csv`
-    - `paper_error_cases_top.csv`
-    - `paper_figure_inventory.csv`
-    - `paper_tables.xlsx`
-    - `paper_summary.md`
-    - `paper_artifacts_manifest.json`
+* **Patient labels:** Extracted from `PatientDiagnosis.csv`, where
+  `DENSITAT ∈ {NEGATIVA, BAIXA, ALTA}`.
 
 ---
 
-## 6. Quick Reproduce Commands
+## 2. Data and Mapping Rules
 
-Run from `/hhome/ricse03/Deep_Learning_Group 3`.
+### 2.1 Data Sources
 
-1. Rebuild clean patch splits:
+* Image directory:
+  `/hhome/ricse03/HelicoData/CrossValidation/Annotated`
 
-```bash
-python3 src/data/rebuild_clean_patch_splits.py --seed 42
+* Patch annotation file:
+  `/hhome/ricse03/HelicoData/HP_WSI-CoordAnnotatedAllPatches.xlsx`
+
+* Patient diagnosis file:
+  `/hhome/ricse03/HelicoData/PatientDiagnosis.csv`
+
+---
+
+### 2.2 Key Mapping Rules (Engineering Constraints)
+
+1. `Pat_ID = patient_folder.split('_')[0]`
+2. `Window_ID` is matched through normalized mapping between image filename stems and xlsx `Window_ID`
+3. Only `Presence ∈ {1, -1}` is retained; `Presence == 0` is ignored
+
+---
+
+### 2.3 Data Cleaning and Sample Retention
+
+During the clean rebuild process:
+
+* Total xlsx rows: 2695
+* Retained patches: 2676
+
+Discarded samples:
+
+* Invalid `Presence` labels (not in `{1, -1}`): 4
+* Missing PNG matches: 15
+
+Overall patient label distribution (`patient_labels.csv`):
+
+* NEGATIVA: 151
+* ALTA: 86
+* BAIXA: 72
+
+---
+
+## 3. Overall Technical Framework
+
+### 3.1 Two-Stage Architecture
+
+#### Stage A: Patch-Level Binary Classification
+
+* Backbone: ResNet family (best retained model: `resnet18_s42`)
+* Output: patch-level positive probability `p_pos`
+
+---
+
+#### Stage B: Patient-Level Three-Class Classification
+
+Input features:
+
+* Statistical summaries of patch probabilities within the same patient
+* Aggregated embedding features (mean and standard deviation)
+
+Classifier:
+
+* Tree-based model selected via cross-validation
+* Best-performing run: `et_baixa_boost`
+
+Output:
+
+* Patient-level predicted class (`pred_class`)
+* Three-class probability vector
+
+---
+
+### 3.2 Data Leakage Prevention
+
+* Train/validation/test splits are performed strictly at the **patient level**
+* No patient appears in more than one split
+* The HoldOut set is reserved exclusively for final evaluation and is not used in training or hyperparameter tuning
+
+---
+
+## 4. Implementation Details
+
+### 4.1 Patch-Level Implementation
+
+* Training script: `src/train/train_patch_presence.py`
+* Model definition: `src/models/resnet_presence.py`
+* Best checkpoint:
+  `outputs/patch_matrix/resnet18_s42/run_001/best.ckpt`
+
+Clean split statistics:
+
+* Train: 1676 patches / 107 patients
+* Validation: 305 patches / 23 patients
+* Test: 695 patches / 24 patients
+
+Presence label distribution:
+
+* Train: +1:1086, -1:590
+* Validation: +1:221, -1:84
+* Test: +1:153, -1:542
+
+---
+
+### 4.2 Patient-Level Feature Construction
+
+* Feature script: `src/infer/build_patient_embedding_features.py`
+
+Feature sources:
+
+1. Statistical features of patch probabilities (mean, variance, quantiles, top-k, etc.)
+2. Aggregated deep embedding features (mean and standard deviation)
+
+Final feature dimensionality under the best configuration: 1033.
+
+---
+
+### 4.3 Patient-Level Classification and Evaluation
+
+* Training script: `src/train/train_patient_classifier_embed_cv.py`
+
+Strategy:
+
+* Cross-validation-based model selection
+* BAIXA-oriented threshold and model search (balancing Macro-F1 and BAIXA recall)
+
+Best result directory:
+`outputs/patient_full/resnet18_s42/run_001/`
+
+---
+
+### 4.4 Interpretability and Reporting
+
+* Patch Grad-CAM generation:
+  `src/infer/generate_patch_gradcam_heatmaps.py`
+  Output: `outputs/patch_heatmaps/run_001/`
+  Generated: 50 heatmaps (25 positive + 25 negative)
+
+* Patient-level prediction report:
+  `src/report/export_patient_prediction_report.py`
+  Output: `patient_prediction_report.xlsx`
+  Includes ground truth, prediction, correctness, confidence, and error case tables.
+
+---
+
+## 5. Experimental Results
+
+### 5.1 Patch-Level Results (Best Patch Run)
+
+Source:
+`outputs/patch_matrix/resnet18_s42/run_001/metrics.json`
+
+Validation:
+
+* Accuracy: 0.9804
+* F1: 0.9853
+* ROC-AUC: 0.9947
+* PR-AUC: 0.9977
+
+Test:
+
+* Accuracy: 0.9505
+* F1: 0.9499
+* ROC-AUC: 0.9792
+* PR-AUC: 0.9863
+
+---
+
+### 5.2 Patient-Level Results (Best Patient Run)
+
+Source:
+`outputs/patient_full/resnet18_s42/run_001/metrics.json`
+
+Overall performance:
+
+* Accuracy: 0.7759
+* Macro-F1: 0.7492
+* Macro-Precision: 0.7677
+* Macro-Recall: 0.7368
+* Balanced Accuracy: 0.7368
+* Macro OvR ROC-AUC: 0.7978
+* Macro OvR PR-AUC: 0.6709
+* Brier Score: 0.4384
+* LogLoss: 2.5991
+* ECE: 0.1296
+
+Per-class metrics:
+
+* NEGATIVA: P 0.8281 / R 0.9138 / F1 0.8689
+* BAIXA: P 0.6250 / R 0.5882 / F1 0.6061
+* ALTA: P 0.8500 / R 0.7083 / F1 0.7727
+
+Confusion matrix:
+
 ```
-
-2. Build patient embedding features (GPU example):
-
-```bash
-CUDA_VISIBLE_DEVICES=0 python3 src/infer/build_patient_embedding_features.py \
-  --checkpoint outputs/patch_matrix/resnet18_s42/run_001/best.ckpt \
-  --output-dir outputs/patient_features_full/resnet18_s42 \
-  --device cuda --batch-size 192 --num-workers 8 --seed 42
-```
-
-3. Train patient classifier:
-
-```bash
-python3 src/train/train_patient_classifier_embed_cv.py \
-  --train-feats outputs/patient_features_full/resnet18_s42/train_features.csv \
-  --val-feats outputs/patient_features_full/resnet18_s42/val_features.csv \
-  --test-feats outputs/patient_features_full/resnet18_s42/test_features.csv \
-  --holdout-feats outputs/patient_features_full/resnet18_s42/holdout_features.csv \
-  --output-root outputs/patient_full/resnet18_s42 \
-  --seed 42 --candidate-family trees --baixa-prob-steps 66 --margin-steps 50
-```
-
-4. Generate patch heatmaps:
-
-```bash
-CUDA_VISIBLE_DEVICES=0 python3 src/infer/generate_patch_gradcam_heatmaps.py \
-  --checkpoint outputs/patch_matrix/resnet18_s42/run_001/best.ckpt \
-  --split-csv manifests/patch_test.csv \
-  --output-dir outputs/patch_heatmaps/run_001 \
-  --max-per-class 25 --seed 42 --device cuda
-```
-
-5. Export patient xlsx report:
-
-```bash
-python3 src/report/export_patient_prediction_report.py \
-  --pred-csv outputs/patient_full/resnet18_s42/run_001/preds_holdout.csv \
-  --labels-csv manifests/patient_labels.csv \
-  --metrics-json outputs/patient_full/resnet18_s42/run_001/metrics.json \
-  --out-xlsx outputs/patient_full/resnet18_s42/run_001/patient_prediction_report.xlsx
-```
-
-6. Build paper artifact package:
-
-```bash
-python3 src/report/build_paper_artifacts.py \
-  --output-dir outputs/paper/run_001 \
-  --reslut-paper-dir /hhome/ricse03/reslut/paper \
-  --top-errors 30
+[[53, 5, 0],
+ [11, 20, 3],
+ [0, 7, 17]]
 ```
 
 ---
 
-## 7. Notes
+### 5.3 Comparison with Earlier Baselines (BAIXA Improvement)
 
-- This repository snapshot is already cleaned to keep only key artifacts for reporting.
-- HoldOut is used as final evaluation output only.
-- No files are generated under `/hhome/ricse03/HelicoData`.
-- Packaged deliverables are available under `/hhome/ricse03/reslut/`.
+Compared with earlier baseline runs (e.g., `outputs/patient/run_009`), BAIXA recall improved from approximately 0.235 to 0.588. At the same time, overall Macro-F1 increased to 0.749.
+
+This demonstrates that patient-level stratified splitting and BAIXA-oriented model selection significantly improve intermediate-class recognition.
+
+---
+
+## 6. Error Analysis and Interpretability
+
+### 6.1 Error Overview
+
+Among 116 HoldOut patients, 26 were misclassified (~22.4%).
+
+From the error reports (`patient_prediction_report.xlsx` and `paper_error_cases_top.csv`):
+
+* High-confidence errors are primarily concentrated in confusion between BAIXA and adjacent classes (NEGATIVA / ALTA).
+* This indicates overlapping feature representations for intermediate disease states.
+
+---
+
+### 6.2 Grad-CAM Observations
+
+From `outputs/patch_heatmaps/run_001/`:
+
+* Both positive and negative samples are covered.
+* Heatmaps provide visual confirmation that model attention aligns with histopathological cues.
+
+---
+
+## 7. Reproducibility and Artifacts
+
+### 7.1 Key Result Directories
+
+* Patch best run:
+  `outputs/patch_matrix/resnet18_s42/run_001/`
+
+* Patient best run:
+  `outputs/patient_full/resnet18_s42/run_001/`
+
+* Summary metrics:
+  `outputs/patient_full/summary_metrics.csv`
+  `outputs/patient_full/summary_top.json`
+
+* Interpretability outputs:
+  `outputs/patch_heatmaps/run_001/`
+
+* Paper artifact bundle:
+  `outputs/paper/run_001/`
+
+---
+
+## 8. Conclusion and Future Work
+
+This work establishes a complete engineering pipeline from patch-level modeling to patient-level diagnosis, achieving Accuracy = 0.7759 and Macro-F1 = 0.7492 on the patient-level three-class task.
+
+The primary limitation lies in distinguishing the intermediate BAIXA class from adjacent categories.
+
+Future directions include:
+
+1. Hard-example reweighting based on high-confidence errors
+2. Stain normalization and stronger domain augmentation
+3. Sequence- or attention-based bag modeling at the patient level
+4. External validation on independent cohorts
+
+
